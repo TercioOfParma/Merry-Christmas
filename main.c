@@ -4,7 +4,7 @@
 //---------------------------------------------------- CONSTANTS ------------------------------------------------------------------ 
 const static int SNOWFLAKE_PAIR = 1;
 const static int GREETING_PAIR = 2;
-const static int SNOWFLAKE_COUNT = 100;
+const static int SNOWFLAKE_COUNT = 300;
 const static int COLUMN_WIDTH = 25;
 const static int ROW_WIDTH = 80;
 const static int MAX_WEIGHT = 5;
@@ -86,6 +86,7 @@ environVars *init(int *success)
 	halfdelay(2);
 	init_pair(SNOWFLAKE_PAIR, COLOR_WHITE, COLOR_BLACK);
 	init_pair(GREETING_PAIR, COLOR_RED, COLOR_GREEN);
+	//base settings
 	temp->gravity = 10;
 	temp->windSpeed = 15;
 	return temp;
@@ -138,25 +139,26 @@ void computeVelocitiesAndPosition(snowflake **snow, environVars *options)
 {
 	srand(time(NULL));
 	int i = 0;
-	int move;
+	int move, veloMod;
 	for(i = 0; i < SNOWFLAKE_COUNT; i++)
 	{
+		veloMod = rand() % VELOCITY_MODIFIER + 1;
 		if(snow[i]->xVel == 0 && snow[i]->yVel == 0)
 		{
 			move = rand () % 3 + 1;
-			if(move == 3)
+			if(move == 3)//so that there aren't tons of flakes
 			{
-				snow[i]->xVel = (snow[i]->weight * options->gravity ) / VELOCITY_MODIFIER;
-				snow[i]->yVel = (snow[i]->weight * options->windSpeed) / VELOCITY_MODIFIER;
+				snow[i]->xVel = (snow[i]->weight * options->gravity ) / veloMod;
+				snow[i]->yVel = (snow[i]->weight * options->windSpeed) / veloMod;
 			
 			
 			}
 		
 		}
 		else
-		{
-			snow[i]->xVel = (snow[i]->weight * options->gravity ) / VELOCITY_MODIFIER;
-			snow[i]->yVel = (snow[i]->weight * options->windSpeed) / VELOCITY_MODIFIER;
+		{//computes velocity each frame
+			snow[i]->xVel = (snow[i]->weight * options->gravity ) / veloMod;
+			snow[i]->yVel = (snow[i]->weight * options->windSpeed) / veloMod;
 			snow[i]->x += snow[i]->xVel;
 			snow[i]->y += snow[i]->yVel;
 		}
@@ -167,11 +169,24 @@ void computeVelocitiesAndPosition(snowflake **snow, environVars *options)
 			snow[i]->xVel = 0;
 		
 		}
+		if(snow[i]->y < 0)
+		{
+			snow[i]->y = COLUMN_WIDTH;
+			snow[i]->yVel *= -1;
+			snow[i]->xVel *= -1;
+		
+		}
 		if(snow[i]->x > ROW_WIDTH)
 		{
 			snow[i]->x = 0;
 			
 		
+		}
+		if( snow[i]->x < 0)
+		{
+			snow[i]->x = ROW_WIDTH;
+			snow[i]->yVel *= -1;
+			snow[i]->xVel *= -1;
 		}
 	
 	
@@ -184,7 +199,7 @@ void drawSnowflakes(snowflake **snow)
 	attron(COLOR_PAIR(SNOWFLAKE_PAIR));
 	for(i = 0; i < SNOWFLAKE_COUNT; i++)
 	{
-		if(snow[i]->y != 0)
+		if(snow[i]->y > 0 && snow[i]->y < COLUMN_WIDTH && snow[i]->x > 0 && snow[i]->x < ROW_WIDTH   )//draws if on screen
 		{
 			mvaddch(snow[i]->y, snow[i]->x,snow[i]->display);
 		}
